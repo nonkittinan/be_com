@@ -26,6 +26,8 @@ CREATE TABLE equipment (
     release_year  SMALLINT      CHECK (release_year BETWEEN 1990 AND 2100),
     rating        NUMERIC(3,1)  CHECK (rating BETWEEN 0 AND 10),                   -- คะแนนรีวิวของทีมงาน (NULL = ยังไม่ให้)
     price         INTEGER       CHECK (price >= 0),                                -- ราคาโดยประมาณ (บาท)
+    model         VARCHAR(100),                                                    -- รหัสรุ่น
+    stock         INTEGER       NOT NULL DEFAULT 0 CHECK (stock >= 0),             -- จำนวนในสต็อก
     emoji         VARCHAR(16),                                                     -- ไอคอนที่แสดงเมื่อไม่มีรูป
     detail        TEXT,
     poster_url    VARCHAR(500),                                                    -- URL เต็มของรูป (http/https)
@@ -123,6 +125,11 @@ INSERT INTO categories (name_en, name_th) VALUES
     ('Monitor',       'จอมอนิเตอร์'),
     ('Headset',       'หูฟัง'),
     ('SSD',           'SSD'),
-    ('RAM',           'แรม');
+    ('RAM',           'แรม'),
+    ('Storage',       'อุปกรณ์จัดเก็บข้อมูล'),
+    ('Motherboard',   'เมนบอร์ด'),
+    ('PSU',           'พาวเวอร์ซัพพลาย'),
+    ('Case',          'เคสคอมพิวเตอร์'),
+    ('Cooling',       'ชุดระบายความร้อน');
 
 COMMIT;
