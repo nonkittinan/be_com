@@ -1,0 +1,40 @@
+# รันทั้งระบบในเครื่อง:  docker compose up --build
+# ต้องมีไฟล์ .env (cp .env.example .env แล้วตั้ง POSTGRES_PASSWORD และ JWT_SECRET)
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: techreview
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?ตั้ง POSTGRES_PASSWORD ในไฟล์ .env ก่อน}
+      POSTGRES_DB: techreview
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # โฟลเดอร์นี้ Postgres รันให้ "ครั้งเดียว" ตอนสร้างฐานข้อมูลใหม่ (volume ว่าง) เรียงตามชื่อไฟล์
+      # ถ้าแก้ schema.sql แล้วอยากให้รันใหม่: docker compose down -v (ลบข้อมูลทั้งหมด)
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    ports:
+      - "127.0.0.1:5432:5432"   # เปิดให้เครื่องตัวเองต่อ psql/DBeaver ได้เท่านั้น เครื่องอื่นในเครือข่ายต่อไม่ได้
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U techreview -d techreview"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy   # รอ Postgres พร้อมรับคำสั่งก่อนค่อยเริ่ม API
+    environment:
+      DATABASE_URL: postgresql://techreview:${POSTGRES_PASSWORD}@db:5432/techreview?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:?ตั้ง JWT_SECRET (ยาว 32 ตัวอักษรขึ้นไป) ในไฟล์ .env ก่อน}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
+      PORT: "8080"
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
